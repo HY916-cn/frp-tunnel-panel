@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4A86FF"/>
+      <stop offset="100%" stop-color="#1741C4"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#0A2050" flood-opacity="0.3"/>
+    </filter>
+    <filter id="bodyShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <!-- macOS 图标标准：1024 画布内 824 见方的圆角矩形本体，四周留白 100 -->
+  <g filter="url(#bodyShadow)">
+    <rect x="100" y="100" width="824" height="824" rx="185" ry="185" fill="url(#bg)"/>
+    <rect x="100" y="100" width="824" height="824" rx="185" ry="185" fill="url(#sheen)"/>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <!-- 隧道外壁：上下两条弧线包住中间的链路 -->
+    <path d="M 330 512 C 400 392, 624 392, 694 512"
+          fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round" opacity="0.45"/>
+    <path d="M 330 512 C 400 632, 624 632, 694 512"
+          fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round" opacity="0.45"/>
+
+    <!-- 中间数据链路 -->
+    <line x1="330" y1="512" x2="694" y2="512"
+          stroke="#FFFFFF" stroke-width="28" stroke-linecap="round"/>
+
+    <!-- 两端节点：左=本地 Mac，右=远程服务器 -->
+    <circle cx="330" cy="512" r="88" fill="#FFFFFF"/>
+    <circle cx="330" cy="512" r="42" fill="#2A62E8"/>
+    <circle cx="694" cy="512" r="88" fill="#FFFFFF"/>
+    <circle cx="694" cy="512" r="42" fill="#2A62E8"/>
+  </g>
+</svg>
