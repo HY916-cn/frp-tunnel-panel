@@ -7,10 +7,16 @@ server/node_modules/
 server/panel.log
 server/panel.error.log
 server/state.json
-
-# macOS
-.DS_Store
+*.log
 
 # 本地运行时产物，不应该进仓库
 *.icns
 *.tiff
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp

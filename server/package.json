@@ -2,9 +2,18 @@
   "name": "frp-panel",
   "version": "1.0.0",
   "private": true,
+  "description": "frp 隧道面板的本地后端服务：读写 frpc.toml、launchctl 控制本地 frpc、SSH 探测远程 frps",
   "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "express": "^4.19.2",
     "@iarna/toml": "^2.2.5"
-  }
+  },
+  "author": "HY916-cn",
+  "license": "MIT"
 }
