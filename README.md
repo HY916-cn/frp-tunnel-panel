@@ -1,6 +1,17 @@
+<div align="center">
+
 # frp 隧道面板
 
-管理 [frp](https://github.com/fatedier/frp) 隧道的 macOS 菜单栏小工具。把本机跑的服务通过一台有公网 IP 的服务器暴露出去——加/删隧道、看连接状态、清日志、启停服务，都在菜单栏点一点完成，不用每次手动改 `frpc.toml` 或 SSH 上服务器查端口。
+**管理 [frp](https://github.com/fatedier/frp) 隧道的 macOS 菜单栏小工具**
+
+![macOS](https://img.shields.io/badge/macOS-26%2B-000000?logo=apple&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
+![Node](https://img.shields.io/badge/Node.js-%E2%89%A518-339933?logo=node.js&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue)
+
+</div>
+
+把本机跑的服务通过一台有公网 IP 的服务器暴露出去——加/删隧道、看连接状态、清日志、启停服务，都在菜单栏点一点完成，不用每次手动改 `frpc.toml` 或 SSH 上服务器查端口。
 
 ---
 
@@ -128,4 +139,6 @@ osascript -e 'tell application "System Events" to make login item at end with pr
 
 ## License
 
-[MIT](LICENSE) © HY916-cn
+本项目基于 [MIT](LICENSE) 协议开源。
+
+2025~2026 ©HaoyuHuang All rights reserved.
