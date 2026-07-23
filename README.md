@@ -4,10 +4,19 @@
 
 **管理 [frp](https://github.com/fatedier/frp) 隧道的 macOS 菜单栏小工具**
 
-![macOS](https://img.shields.io/badge/macOS-26%2B-000000?logo=apple&logoColor=white)
-![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
-![Node](https://img.shields.io/badge/Node.js-%E2%89%A518-339933?logo=node.js&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-blue)
+[![macOS](https://img.shields.io/badge/macOS-26%2B-000000?logo=apple&logoColor=white)](https://www.apple.com/macos/)
+[![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](https://www.swift.org/)
+[![SwiftUI](https://img.shields.io/badge/SwiftUI-menubar-0071E3?logo=swift&logoColor=white)](https://developer.apple.com/xcode/swiftui/)
+[![Node](https://img.shields.io/badge/Node.js-%E2%89%A518-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![frp](https://img.shields.io/badge/frp-tunnel-00ADD8?logo=go&logoColor=white)](https://github.com/fatedier/frp)
+[![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+
+[![Stars](https://img.shields.io/github/stars/HY916-cn/frp-tunnel-panel?logo=github&label=Stars)](https://github.com/HY916-cn/frp-tunnel-panel/stargazers)
+[![Forks](https://img.shields.io/github/forks/HY916-cn/frp-tunnel-panel?logo=github&label=Forks)](https://github.com/HY916-cn/frp-tunnel-panel/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/HY916-cn/frp-tunnel-panel?logo=git&logoColor=white)](https://github.com/HY916-cn/frp-tunnel-panel/commits)
+[![Repo Size](https://img.shields.io/github/repo-size/HY916-cn/frp-tunnel-panel)](https://github.com/HY916-cn/frp-tunnel-panel)
+[![Issues](https://img.shields.io/github/issues/HY916-cn/frp-tunnel-panel?logo=github&label=Issues)](https://github.com/HY916-cn/frp-tunnel-panel/issues)
 
 </div>
 
