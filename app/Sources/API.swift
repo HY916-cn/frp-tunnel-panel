@@ -88,6 +88,15 @@ actor API {
         )
     }
 
+    func reorderProxies(_ order: [String]) async throws {
+        _ = try await request(
+            "api/proxies/order",
+            method: "PUT",
+            body: ["order": order],
+            as: ActionResult.self
+        )
+    }
+
     // components.path 会自行做百分号编码，这里传未编码的名称即可，不要预先编码（会双重转义）
     func removeProxy(name: String) async throws {
         _ = try await request("api/proxies/\(name)", method: "DELETE", as: ActionResult.self)

@@ -22,8 +22,10 @@ enum FieldState: Equatable {
 final class PanelModel {
     var local: LocalStatus?
     var remote: RemoteStatus?
+    var proxies: [Proxy] = []
     var loadError: String?
     var busy = false
+    var isReordering = false
 
     // 新增隧道表单
     var newName = "" { didSet { validateName() } }
@@ -41,6 +43,8 @@ final class PanelModel {
     private var localCheckTask: Task<Void, Never>?
     private var remoteCheckTask: Task<Void, Never>?
     private var toastDismissTask: Task<Void, Never>?
+    private var reorderTimeoutTask: Task<Void, Never>?
+    private var originalProxyOrder: [Proxy] = []
 
     func showToast(_ kind: ToastItem.Kind, _ message: String, autoDismiss: Bool = true) {
         toast = ToastItem(kind: kind, message: message)
@@ -80,6 +84,11 @@ final class PanelModel {
         let (l, r) = await (localResult, remoteResult)
         local = l
         remote = r
+        // 拖动期间保留界面上的临时顺序，避免 5 秒自动刷新把正在移动的行弹回去。
+        // 后端状态仍照常刷新；拖动完成或超时取消后再重新采用服务端顺序。
+        if !isReordering {
+            proxies = l?.proxies ?? []
+        }
         loadError = (l == nil)
             ? "连接不上后台服务 (127.0.0.1:8000)，隧道配置读不到。请确认 frp-panel 服务在运行。"
             : nil
@@ -176,6 +185,72 @@ final class PanelModel {
     }
 
     // MARK: - 操作
+
+    func beginProxyReorder() {
+        guard !busy else { return }
+        if !isReordering {
+            originalProxyOrder = proxies
+            isReordering = true
+        }
+
+        // SwiftUI 没有稳定的 drag-cancel 回调。用户把拖拽丢到列表外时，用超时兜底
+        // 恢复服务端顺序，避免自动刷新从此一直被暂停。
+        reorderTimeoutTask?.cancel()
+        reorderTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(30))
+            guard !Task.isCancelled else { return }
+            await self?.cancelProxyReorder()
+        }
+    }
+
+    func moveProxy(_ moving: Proxy, before destination: Proxy) {
+        guard
+            isReordering,
+            let sourceIndex = proxies.firstIndex(of: moving),
+            let destinationIndex = proxies.firstIndex(of: destination),
+            sourceIndex != destinationIndex
+        else { return }
+
+        proxies.move(
+            fromOffsets: IndexSet(integer: sourceIndex),
+            toOffset: destinationIndex > sourceIndex ? destinationIndex + 1 : destinationIndex
+        )
+    }
+
+    func finishProxyReorder() async {
+        guard isReordering else { return }
+        reorderTimeoutTask?.cancel()
+
+        let order = proxies.map(\.name)
+        let originalOrder = originalProxyOrder.map(\.name)
+        guard order != originalOrder else {
+            isReordering = false
+            originalProxyOrder = []
+            return
+        }
+
+        busy = true
+        do {
+            try await API.shared.reorderProxies(order)
+            showToast(.success, "隧道顺序已保存，frpc 正在重载")
+        } catch {
+            proxies = originalProxyOrder
+            showToast(.error, error.localizedDescription, autoDismiss: false)
+        }
+        busy = false
+        isReordering = false
+        originalProxyOrder = []
+        await refresh()
+    }
+
+    func cancelProxyReorder() async {
+        guard isReordering, !busy else { return }
+        reorderTimeoutTask?.cancel()
+        proxies = originalProxyOrder
+        originalProxyOrder = []
+        isReordering = false
+        await refresh()
+    }
 
     func addProxy() async {
         guard !busy else { return }

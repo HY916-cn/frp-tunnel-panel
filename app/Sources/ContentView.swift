@@ -1,9 +1,11 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     /// 由 AppDelegate 持有并注入：菜单栏图标的健康轮询和面板共用同一份状态
     @Bindable var model: PanelModel
     @State private var pendingDelete: String?
+    @State private var draggedProxy: Proxy?
     @State private var logTab = 0
     @Environment(\.colorScheme) private var colorScheme
 
@@ -165,15 +167,12 @@ struct ContentView: View {
 
     // MARK: 隧道列表
 
-    private var proxyList: [Proxy] {
-        model.local?.proxies ?? []
-    }
-
     private var tunnels: some View {
         Card(title: "隧道") {
-            if !proxyList.isEmpty {
+            if !model.proxies.isEmpty {
                 VStack(spacing: 0) {
                     HStack {
+                        Color.clear.frame(width: 18)
                         Text("名称").frame(width: 150, alignment: .leading)
                         Text("本地").frame(width: 80, alignment: .leading)
                         Text("远程").frame(width: 80, alignment: .leading)
@@ -183,12 +182,31 @@ struct ContentView: View {
                     .foregroundStyle(.tertiary)
                     .padding(.bottom, 6)
 
-                    ForEach(proxyList) { proxy in
+                    ForEach(model.proxies) { proxy in
                         ProxyRow(
                             proxy: proxy,
-                            isLast: proxy.id == proxyList.last?.id,
+                            isLast: proxy.id == model.proxies.last?.id,
                             busy: model.busy,
+                            isDragging: draggedProxy == proxy,
                             onDelete: { pendingDelete = proxy.name }
+                        )
+                        .contentShape(Rectangle())
+                        .onDrag {
+                            draggedProxy = proxy
+                            model.beginProxyReorder()
+                            return NSItemProvider(object: proxy.name as NSString)
+                        } preview: {
+                            Label(proxy.name, systemImage: "line.3.horizontal")
+                                .padding(8)
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        }
+                        .onDrop(
+                            of: [UTType.plainText],
+                            delegate: ProxyDropDelegate(
+                                destination: proxy,
+                                draggedProxy: $draggedProxy,
+                                model: model
+                            )
                         )
                     }
                 }
@@ -276,5 +294,28 @@ struct ContentView: View {
 
             LogView(lines: logTab == 0 ? (model.local?.log ?? []) : (model.remote?.log ?? []))
         }
+    }
+}
+
+private struct ProxyDropDelegate: DropDelegate {
+    let destination: Proxy
+    @Binding var draggedProxy: Proxy?
+    let model: PanelModel
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedProxy, draggedProxy != destination else { return }
+        withAnimation(.snappy(duration: 0.18)) {
+            model.moveProxy(draggedProxy, before: destination)
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedProxy = nil
+        Task { await model.finishProxyReorder() }
+        return true
     }
 }

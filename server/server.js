@@ -316,6 +316,39 @@ app.post('/api/proxies', async (req, res) => {
   }
 });
 
+app.put('/api/proxies/order', async (req, res) => {
+  try {
+    const { order } = req.body;
+    if (!Array.isArray(order) || !order.every((name) => typeof name === 'string')) {
+      return res.status(400).json({ error: 'order 必须是隧道名称数组' });
+    }
+
+    const cfg = readConfig();
+    cfg.proxies = cfg.proxies || [];
+    const existingNames = cfg.proxies.map((proxy) => proxy.name);
+    const existingNameSet = new Set(existingNames);
+    const submittedNameSet = new Set(order);
+    const isExactPermutation =
+      order.length === existingNames.length &&
+      submittedNameSet.size === order.length &&
+      order.every((name) => existingNameSet.has(name));
+
+    if (!isExactPermutation) {
+      return res.status(400).json({
+        error: '排序列表必须完整包含当前全部隧道，且不能有重复或未知名称',
+      });
+    }
+
+    const proxiesByName = new Map(cfg.proxies.map((proxy) => [proxy.name, proxy]));
+    cfg.proxies = order.map((name) => proxiesByName.get(name));
+    writeConfig(cfg);
+    const reload = await reloadFrpc();
+    res.json({ ok: true, reload });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.delete('/api/proxies/:name', async (req, res) => {
   try {
     const cfg = readConfig();

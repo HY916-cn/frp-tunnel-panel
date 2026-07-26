@@ -125,6 +125,7 @@ osascript -e 'tell application "System Events" to make login item at end with pr
 - 点菜单栏图标开/关面板，右键可退出。
 - 图标颜色跟随隧道状态变化（异常变红）；15 秒轮询一次，面板打开时 5 秒一次。
 - 新增隧道会实时检测端口占用（本机用 `lsof`，远程 SSH 查 `ss`），冲突直接标红。
+- 按住隧道行左侧的拖拽手柄即可调整顺序；排序会写回 `frpc.toml` 并自动重载 frpc。
 - 隧道名称不能重复；建议本地端口 = 远程端口，方便对照。
 - 日志可清空；启停/重载本地 frpc 时也会自动清一次。
 
