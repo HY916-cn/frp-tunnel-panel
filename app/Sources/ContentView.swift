@@ -166,12 +166,19 @@ struct ContentView: View {
     // MARK: 隧道列表
 
     private var tunnels: some View {
-        Card(title: "隧道") {
+        Card(
+            title: "隧道",
+            trailing: AnyView(
+                Label("拖动左侧手柄排序", systemImage: "hand.draw")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(model.isReordering ? Color.accentColor : Color.secondary)
+            )
+        ) {
             if !model.proxies.isEmpty {
                 VStack(spacing: 0) {
                     HStack {
-                        Color.clear.frame(width: 18)
-                        Text("名称").frame(width: 150, alignment: .leading)
+                        Color.clear.frame(width: 29)
+                        Text("名称").frame(width: 144, alignment: .leading)
                         Text("本地").frame(width: 80, alignment: .leading)
                         Text("远程").frame(width: 80, alignment: .leading)
                         Spacer()
@@ -185,8 +192,19 @@ struct ContentView: View {
                             proxy: proxy,
                             isLast: proxy.id == model.proxies.last?.id,
                             busy: model.busy,
+                            isDropTarget: model.dragTargetName == proxy.name
+                                && model.draggedProxyName != proxy.name,
                             canMoveUp: index > 0,
                             canMoveDown: index < model.proxies.count - 1,
+                            onDragStarted: {
+                                model.beginProxyDrag(proxy.name)
+                            },
+                            onDragChanged: { translation in
+                                model.updateProxyDrag(translation: translation, rowHeight: 39)
+                            },
+                            onDragEnded: {
+                                Task { await model.finishProxyDrag() }
+                            },
                             onMoveUp: {
                                 guard index > 0 else { return }
                                 let target = model.proxies[index - 1]
@@ -209,24 +227,6 @@ struct ContentView: View {
                             },
                             onDelete: { pendingDelete = proxy.name }
                         )
-                        .contentShape(Rectangle())
-                        .draggable(proxy.name) {
-                            Label(proxy.name, systemImage: "line.3.horizontal")
-                                .padding(8)
-                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-                        }
-                        .dropDestination(for: String.self) { names, _ in
-                            guard let draggedName = names.first, draggedName != proxy.name else {
-                                return false
-                            }
-                            Task {
-                                await model.reorderProxy(
-                                    draggedName: draggedName,
-                                    targetName: proxy.name
-                                )
-                            }
-                            return true
-                        }
                     }
                 }
             } else {

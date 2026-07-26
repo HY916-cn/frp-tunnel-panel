@@ -26,6 +26,8 @@ final class PanelModel {
     var loadError: String?
     var busy = false
     var isReordering = false
+    var draggedProxyName: String?
+    var dragTargetName: String?
 
     // 新增隧道表单
     var newName = "" { didSet { validateName() } }
@@ -43,6 +45,7 @@ final class PanelModel {
     private var localCheckTask: Task<Void, Never>?
     private var remoteCheckTask: Task<Void, Never>?
     private var toastDismissTask: Task<Void, Never>?
+    private var dragTimeoutTask: Task<Void, Never>?
 
     func showToast(_ kind: ToastItem.Kind, _ message: String, autoDismiss: Bool = true) {
         toast = ToastItem(kind: kind, message: message)
@@ -184,6 +187,50 @@ final class PanelModel {
 
     // MARK: - 操作
 
+    func beginProxyDrag(_ name: String) {
+        guard !busy, proxies.contains(where: { $0.name == name }) else { return }
+        draggedProxyName = name
+        dragTargetName = name
+        isReordering = true
+        dragTimeoutTask?.cancel()
+        dragTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(15))
+            guard !Task.isCancelled else { return }
+            self?.cancelProxyDrag()
+        }
+    }
+
+    func cancelProxyDrag() {
+        dragTimeoutTask?.cancel()
+        draggedProxyName = nil
+        dragTargetName = nil
+        isReordering = false
+    }
+
+    func updateProxyDrag(translation: CGFloat, rowHeight: CGFloat) {
+        guard
+            let draggedProxyName,
+            let sourceIndex = proxies.firstIndex(where: { $0.name == draggedProxyName }),
+            rowHeight > 0
+        else { return }
+
+        let rowDelta = Int((translation / rowHeight).rounded())
+        let targetIndex = min(max(sourceIndex + rowDelta, 0), proxies.count - 1)
+        dragTargetName = proxies[targetIndex].name
+    }
+
+    func finishProxyDrag() async {
+        guard let draggedProxyName, let dragTargetName else {
+            cancelProxyDrag()
+            return
+        }
+        guard draggedProxyName != dragTargetName else {
+            cancelProxyDrag()
+            return
+        }
+        await reorderProxy(draggedName: draggedProxyName, targetName: dragTargetName)
+    }
+
     func reorderProxy(draggedName: String, targetName: String) async {
         guard
             !busy,
@@ -209,7 +256,7 @@ final class PanelModel {
             showToast(.error, error.localizedDescription, autoDismiss: false)
         }
         busy = false
-        isReordering = false
+        cancelProxyDrag()
         await refresh()
     }
 
