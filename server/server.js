@@ -130,6 +130,29 @@ function writeState(patch) {
   return next;
 }
 
+// 隧道排序是面板的显示偏好，不属于 frpc 配置。已保存的名称优先排列，
+// 新增隧道自动追加，已删除隧道则自然忽略，避免偏好数据过期导致列表缺项。
+function orderProxiesForDisplay(proxies) {
+  const savedOrder = readState().proxyOrder;
+  if (!Array.isArray(savedOrder)) return proxies;
+
+  const proxiesByName = new Map(proxies.map((proxy) => [proxy.name, proxy]));
+  const ordered = [];
+  for (const name of savedOrder) {
+    const proxy = proxiesByName.get(name);
+    if (!proxy) continue;
+    ordered.push(proxy);
+    proxiesByName.delete(name);
+  }
+  for (const proxy of proxies) {
+    if (proxiesByName.has(proxy.name)) {
+      ordered.push(proxy);
+      proxiesByName.delete(proxy.name);
+    }
+  }
+  return ordered;
+}
+
 // frpc 的日志由 launchd 以 O_APPEND 打开，截断后新日志会从头写起，不需要重启进程
 function clearLocalLog() {
   try {
@@ -259,7 +282,7 @@ app.get('/api/status', async (req, res) => {
       serverPort: cfg.serverPort,
       loaded,
       connected,
-      proxies: (cfg.proxies || []).map((p) => ({
+      proxies: orderProxiesForDisplay(cfg.proxies || []).map((p) => ({
         name: p.name,
         type: p.type,
         localPort: p.localPort,
@@ -339,11 +362,9 @@ app.put('/api/proxies/order', async (req, res) => {
       });
     }
 
-    const proxiesByName = new Map(cfg.proxies.map((proxy) => [proxy.name, proxy]));
-    cfg.proxies = order.map((name) => proxiesByName.get(name));
-    writeConfig(cfg);
-    const reload = await reloadFrpc();
-    res.json({ ok: true, reload });
+    // 只保存面板显示顺序，不改 frpc.toml，也不 reload frpc。
+    writeState({ proxyOrder: order });
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

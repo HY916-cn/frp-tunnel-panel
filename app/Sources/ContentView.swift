@@ -200,7 +200,9 @@ struct ContentView: View {
                                 model.beginProxyDrag(proxy.name)
                             },
                             onDragChanged: { translation in
-                                model.updateProxyDrag(translation: translation, rowHeight: 39)
+                                withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.88)) {
+                                    model.updateProxyDrag(translation: translation, rowHeight: 39)
+                                }
                             },
                             onDragEnded: {
                                 Task { await model.finishProxyDrag() }

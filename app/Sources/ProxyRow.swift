@@ -8,7 +8,7 @@ struct ProxyRow: View {
     let canMoveUp: Bool
     let canMoveDown: Bool
     let onDragStarted: () -> Void
-    let onDragChanged: (CGFloat) -> Void
+    let onDragChanged: (CGFloat) -> CGFloat
     let onDragEnded: () -> Void
     let onMoveUp: () -> Void
     let onMoveDown: () -> Void
@@ -38,8 +38,7 @@ struct ProxyRow: View {
                                     isDragging = true
                                     onDragStarted()
                                 }
-                                dragOffset = value.translation.height
-                                onDragChanged(value.translation.height)
+                                dragOffset = onDragChanged(value.translation.height)
                             }
                             .onEnded { _ in
                                 withAnimation(.snappy(duration: 0.18)) {
