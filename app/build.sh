@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 
 APP_NAME="frp 隧道面板"
 BUNDLE_ID="com.user.frp-panel-app"
-DEST="/Applications/${APP_NAME}.app"
+DEST="${FRP_PANEL_APP_DEST:-/Applications/${APP_NAME}.app}"
 
 echo "==> swift build (release)"
 swift build -c release
@@ -73,9 +73,9 @@ cat > "$DEST/Contents/Info.plist" <<PLIST
     <key>CFBundleIdentifier</key>
     <string>${BUNDLE_ID}</string>
     <key>CFBundleVersion</key>
-    <string>1.1.3</string>
+    <string>1.1.4</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.1.3</string>
+    <string>1.1.4</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleIconFile</key>

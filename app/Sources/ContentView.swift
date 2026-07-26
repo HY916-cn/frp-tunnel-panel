@@ -34,7 +34,10 @@ struct ContentView: View {
             await model.refresh()
             model.startAutoRefresh()
         }
-        .onDisappear { model.stopAutoRefresh() }
+        .onDisappear {
+            model.stopAutoRefresh()
+            model.cancelProxyDrag()
+        }
         .confirmationDialog(
             "删除隧道 \"\(pendingDelete ?? "")\"？",
             isPresented: .init(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })
@@ -192,6 +195,12 @@ struct ContentView: View {
                             proxy: proxy,
                             isLast: proxy.id == model.proxies.last?.id,
                             busy: model.busy,
+                            displacement: DragReorder.displacement(
+                                for: index,
+                                sourceIndex: model.dragSourceIndex,
+                                targetIndex: model.dragTargetIndex,
+                                rowHeight: 39
+                            ),
                             isDropTarget: model.dragTargetName == proxy.name
                                 && model.draggedProxyName != proxy.name,
                             canMoveUp: index > 0,
@@ -200,12 +209,10 @@ struct ContentView: View {
                                 model.beginProxyDrag(proxy.name)
                             },
                             onDragChanged: { translation in
-                                withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.88)) {
-                                    model.updateProxyDrag(translation: translation, rowHeight: 39)
-                                }
+                                model.updateProxyDrag(translation: translation, rowHeight: 39)
                             },
                             onDragEnded: {
-                                Task { await model.finishProxyDrag() }
+                                model.finishProxyDrag()
                             },
                             onMoveUp: {
                                 guard index > 0 else { return }

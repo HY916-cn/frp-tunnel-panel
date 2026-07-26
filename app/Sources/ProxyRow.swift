@@ -4,17 +4,18 @@ struct ProxyRow: View {
     let proxy: Proxy
     let isLast: Bool
     let busy: Bool
+    let displacement: CGFloat
     let isDropTarget: Bool
     let canMoveUp: Bool
     let canMoveDown: Bool
     let onDragStarted: () -> Void
-    let onDragChanged: (CGFloat) -> CGFloat
+    let onDragChanged: (CGFloat) -> Void
     let onDragEnded: () -> Void
     let onMoveUp: () -> Void
     let onMoveDown: () -> Void
     let onDelete: () -> Void
     @State private var isHovered = false
-    @State private var dragOffset: CGFloat = 0
+    @State private var dragTranslation: CGFloat = 0
     @State private var isDragging = false
 
     /// 本地/远程端口不一致时高亮提示——网站项目要求两者相同，
@@ -32,18 +33,18 @@ struct ProxyRow: View {
                     .frame(width: 24, height: 24)
                     .contentShape(Rectangle())
                     .highPriorityGesture(
-                        DragGesture(minimumDistance: 2)
+                        // 固定到全局坐标：视图自身移动时，translation 不会改变参考系。
+                        DragGesture(minimumDistance: 2, coordinateSpace: .global)
                             .onChanged { value in
                                 if !isDragging {
                                     isDragging = true
                                     onDragStarted()
                                 }
-                                dragOffset = onDragChanged(value.translation.height)
+                                dragTranslation = value.translation.height
+                                onDragChanged(value.translation.height)
                             }
                             .onEnded { _ in
-                                withAnimation(.snappy(duration: 0.18)) {
-                                    dragOffset = 0
-                                }
+                                dragTranslation = 0
                                 isDragging = false
                                 onDragEnded()
                             }
@@ -93,7 +94,8 @@ struct ProxyRow: View {
             }
             .padding(.vertical, 7)
             .padding(.horizontal, 5)
-            .offset(y: dragOffset)
+            // 被拖行不参与动画，严格使用鼠标的完整位移；只有让位行做弹簧动画。
+            .offset(y: isDragging ? dragTranslation : displacement)
             .zIndex(isDragging ? 10 : 0)
             .background(
                 isDragging
@@ -110,6 +112,10 @@ struct ProxyRow: View {
             .shadow(color: .black.opacity(isDragging ? 0.25 : 0), radius: 8, y: 3)
             .onHover { isHovered = $0 }
             .animation(.easeOut(duration: 0.12), value: isHovered)
+            .animation(
+                isDragging ? nil : .interactiveSpring(response: 0.16, dampingFraction: 0.9),
+                value: displacement
+            )
 
             if !isLast {
                 Divider().opacity(0.5)
