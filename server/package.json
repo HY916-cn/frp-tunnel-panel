@@ -1,6 +1,6 @@
 {
   "name": "frp-panel",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "description": "frp 隧道面板的本地后端服务：读写 frpc.toml、launchctl 控制本地 frpc、SSH 探测远程 frps",
   "main": "server.js",

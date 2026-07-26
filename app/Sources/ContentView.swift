@@ -1,11 +1,9 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct ContentView: View {
     /// 由 AppDelegate 持有并注入：菜单栏图标的健康轮询和面板共用同一份状态
     @Bindable var model: PanelModel
     @State private var pendingDelete: String?
-    @State private var draggedProxy: Proxy?
     @State private var logTab = 0
     @Environment(\.colorScheme) private var colorScheme
 
@@ -182,32 +180,53 @@ struct ContentView: View {
                     .foregroundStyle(.tertiary)
                     .padding(.bottom, 6)
 
-                    ForEach(model.proxies) { proxy in
+                    ForEach(Array(model.proxies.enumerated()), id: \.element.id) { index, proxy in
                         ProxyRow(
                             proxy: proxy,
                             isLast: proxy.id == model.proxies.last?.id,
                             busy: model.busy,
-                            isDragging: draggedProxy == proxy,
+                            canMoveUp: index > 0,
+                            canMoveDown: index < model.proxies.count - 1,
+                            onMoveUp: {
+                                guard index > 0 else { return }
+                                let target = model.proxies[index - 1]
+                                Task {
+                                    await model.reorderProxy(
+                                        draggedName: proxy.name,
+                                        targetName: target.name
+                                    )
+                                }
+                            },
+                            onMoveDown: {
+                                guard index < model.proxies.count - 1 else { return }
+                                let target = model.proxies[index + 1]
+                                Task {
+                                    await model.reorderProxy(
+                                        draggedName: proxy.name,
+                                        targetName: target.name
+                                    )
+                                }
+                            },
                             onDelete: { pendingDelete = proxy.name }
                         )
                         .contentShape(Rectangle())
-                        .onDrag {
-                            draggedProxy = proxy
-                            model.beginProxyReorder()
-                            return NSItemProvider(object: proxy.name as NSString)
-                        } preview: {
+                        .draggable(proxy.name) {
                             Label(proxy.name, systemImage: "line.3.horizontal")
                                 .padding(8)
                                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                         }
-                        .onDrop(
-                            of: [UTType.plainText],
-                            delegate: ProxyDropDelegate(
-                                destination: proxy,
-                                draggedProxy: $draggedProxy,
-                                model: model
-                            )
-                        )
+                        .dropDestination(for: String.self) { names, _ in
+                            guard let draggedName = names.first, draggedName != proxy.name else {
+                                return false
+                            }
+                            Task {
+                                await model.reorderProxy(
+                                    draggedName: draggedName,
+                                    targetName: proxy.name
+                                )
+                            }
+                            return true
+                        }
                     }
                 }
             } else {
@@ -294,28 +313,5 @@ struct ContentView: View {
 
             LogView(lines: logTab == 0 ? (model.local?.log ?? []) : (model.remote?.log ?? []))
         }
-    }
-}
-
-private struct ProxyDropDelegate: DropDelegate {
-    let destination: Proxy
-    @Binding var draggedProxy: Proxy?
-    let model: PanelModel
-
-    func dropEntered(info: DropInfo) {
-        guard let draggedProxy, draggedProxy != destination else { return }
-        withAnimation(.snappy(duration: 0.18)) {
-            model.moveProxy(draggedProxy, before: destination)
-        }
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        draggedProxy = nil
-        Task { await model.finishProxyReorder() }
-        return true
     }
 }

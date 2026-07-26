@@ -43,8 +43,6 @@ final class PanelModel {
     private var localCheckTask: Task<Void, Never>?
     private var remoteCheckTask: Task<Void, Never>?
     private var toastDismissTask: Task<Void, Never>?
-    private var reorderTimeoutTask: Task<Void, Never>?
-    private var originalProxyOrder: [Proxy] = []
 
     func showToast(_ kind: ToastItem.Kind, _ message: String, autoDismiss: Bool = true) {
         toast = ToastItem(kind: kind, message: message)
@@ -186,49 +184,22 @@ final class PanelModel {
 
     // MARK: - 操作
 
-    func beginProxyReorder() {
-        guard !busy else { return }
-        if !isReordering {
-            originalProxyOrder = proxies
-            isReordering = true
-        }
-
-        // SwiftUI 没有稳定的 drag-cancel 回调。用户把拖拽丢到列表外时，用超时兜底
-        // 恢复服务端顺序，避免自动刷新从此一直被暂停。
-        reorderTimeoutTask?.cancel()
-        reorderTimeoutTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(30))
-            guard !Task.isCancelled else { return }
-            await self?.cancelProxyReorder()
-        }
-    }
-
-    func moveProxy(_ moving: Proxy, before destination: Proxy) {
+    func reorderProxy(draggedName: String, targetName: String) async {
         guard
-            isReordering,
-            let sourceIndex = proxies.firstIndex(of: moving),
-            let destinationIndex = proxies.firstIndex(of: destination),
+            !busy,
+            let sourceIndex = proxies.firstIndex(where: { $0.name == draggedName }),
+            let destinationIndex = proxies.firstIndex(where: { $0.name == targetName }),
             sourceIndex != destinationIndex
         else { return }
 
+        let originalProxyOrder = proxies
         proxies.move(
             fromOffsets: IndexSet(integer: sourceIndex),
             toOffset: destinationIndex > sourceIndex ? destinationIndex + 1 : destinationIndex
         )
-    }
-
-    func finishProxyReorder() async {
-        guard isReordering else { return }
-        reorderTimeoutTask?.cancel()
-
         let order = proxies.map(\.name)
-        let originalOrder = originalProxyOrder.map(\.name)
-        guard order != originalOrder else {
-            isReordering = false
-            originalProxyOrder = []
-            return
-        }
 
+        isReordering = true
         busy = true
         do {
             try await API.shared.reorderProxies(order)
@@ -238,16 +209,6 @@ final class PanelModel {
             showToast(.error, error.localizedDescription, autoDismiss: false)
         }
         busy = false
-        isReordering = false
-        originalProxyOrder = []
-        await refresh()
-    }
-
-    func cancelProxyReorder() async {
-        guard isReordering, !busy else { return }
-        reorderTimeoutTask?.cancel()
-        proxies = originalProxyOrder
-        originalProxyOrder = []
         isReordering = false
         await refresh()
     }

@@ -4,7 +4,10 @@ struct ProxyRow: View {
     let proxy: Proxy
     let isLast: Bool
     let busy: Bool
-    let isDragging: Bool
+    let canMoveUp: Bool
+    let canMoveDown: Bool
+    let onMoveUp: () -> Void
+    let onMoveDown: () -> Void
     let onDelete: () -> Void
 
     /// 本地/远程端口不一致时高亮提示——网站项目要求两者相同，
@@ -37,6 +40,22 @@ struct ProxyRow: View {
 
                 Spacer()
 
+                Button(action: onMoveUp) {
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .buttonStyle(.borderless)
+                .disabled(busy || !canMoveUp)
+                .help("上移")
+
+                Button(action: onMoveDown) {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .buttonStyle(.borderless)
+                .disabled(busy || !canMoveDown)
+                .help("下移")
+
                 Button(action: onDelete) {
                     Image(systemName: "trash")
                         .font(.system(size: 11))
@@ -46,7 +65,6 @@ struct ProxyRow: View {
                 .disabled(busy)
             }
             .padding(.vertical, 7)
-            .opacity(isDragging ? 0.45 : 1)
 
             if !isLast {
                 Divider().opacity(0.5)
