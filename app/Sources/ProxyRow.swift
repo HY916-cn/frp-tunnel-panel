@@ -6,13 +6,9 @@ struct ProxyRow: View {
     let busy: Bool
     let displacement: CGFloat
     let isDropTarget: Bool
-    let canMoveUp: Bool
-    let canMoveDown: Bool
     let onDragStarted: () -> Void
     let onDragChanged: (CGFloat) -> Void
     let onDragEnded: () -> Void
-    let onMoveUp: () -> Void
-    let onMoveDown: () -> Void
     let onDelete: () -> Void
     @State private var isHovered = false
     @State private var dragTranslation: CGFloat = 0
@@ -65,24 +61,6 @@ struct ProxyRow: View {
                     .frame(width: 80, alignment: .leading)
 
                 Spacer()
-
-                Button(action: onMoveUp) {
-                    Image(systemName: "chevron.up")
-                        .font(.system(size: 10, weight: .semibold))
-                }
-                .buttonStyle(.borderless)
-                .disabled(busy || !canMoveUp)
-                .help("上移")
-                .opacity(isHovered ? 1 : 0)
-
-                Button(action: onMoveDown) {
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 10, weight: .semibold))
-                }
-                .buttonStyle(.borderless)
-                .disabled(busy || !canMoveDown)
-                .help("下移")
-                .opacity(isHovered ? 1 : 0)
 
                 Button(action: onDelete) {
                     Image(systemName: "trash")

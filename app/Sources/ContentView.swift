@@ -203,8 +203,6 @@ struct ContentView: View {
                             ),
                             isDropTarget: model.dragTargetName == proxy.name
                                 && model.draggedProxyName != proxy.name,
-                            canMoveUp: index > 0,
-                            canMoveDown: index < model.proxies.count - 1,
                             onDragStarted: {
                                 model.beginProxyDrag(proxy.name)
                             },
@@ -213,26 +211,6 @@ struct ContentView: View {
                             },
                             onDragEnded: {
                                 model.finishProxyDrag()
-                            },
-                            onMoveUp: {
-                                guard index > 0 else { return }
-                                let target = model.proxies[index - 1]
-                                Task {
-                                    await model.reorderProxy(
-                                        draggedName: proxy.name,
-                                        targetName: target.name
-                                    )
-                                }
-                            },
-                            onMoveDown: {
-                                guard index < model.proxies.count - 1 else { return }
-                                let target = model.proxies[index + 1]
-                                Task {
-                                    await model.reorderProxy(
-                                        draggedName: proxy.name,
-                                        targetName: target.name
-                                    )
-                                }
                             },
                             onDelete: { pendingDelete = proxy.name }
                         )

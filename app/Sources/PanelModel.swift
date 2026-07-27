@@ -274,34 +274,6 @@ final class PanelModel {
         }
     }
 
-    func reorderProxy(draggedName: String, targetName: String) async {
-        guard
-            !busy,
-            let sourceIndex = proxies.firstIndex(where: { $0.name == draggedName }),
-            let destinationIndex = proxies.firstIndex(where: { $0.name == targetName }),
-            sourceIndex != destinationIndex
-        else { return }
-
-        let originalProxyOrder = proxies
-        proxies.move(
-            fromOffsets: IndexSet(integer: sourceIndex),
-            toOffset: destinationIndex > sourceIndex ? destinationIndex + 1 : destinationIndex
-        )
-        let order = proxies.map(\.name)
-
-        isReordering = true
-        busy = true
-        do {
-            try await API.shared.reorderProxies(order)
-            showToast(.success, "隧道显示顺序已保存")
-        } catch {
-            proxies = originalProxyOrder
-            showToast(.error, error.localizedDescription, autoDismiss: false)
-        }
-        busy = false
-        await refresh()
-    }
-
     func addProxy() async {
         guard !busy else { return }
         guard
