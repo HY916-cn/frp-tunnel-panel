@@ -251,6 +251,11 @@ async function fullPortCheck(side, port) {
     return { valid: true, occupied: null, reason: `无法连接远程服务器确认占用情况：${result.reason}` };
   }
   if (result.occupied) {
+    // 本地端口本来就是要转发给已经挂载在那的项目，"被占用"是正常且预期的状态，不能当作不可用；
+    // 远程端口（frps 机器上）则相反，被占用说明和别的服务/隧道冲突，必须拒绝。
+    if (side === 'local') {
+      return { valid: true, occupied: true, reason: `已被进程 ${result.occupiedBy} 监听（这通常就是你要转发的本地项目，可以继续）` };
+    }
     return { valid: false, occupied: true, reason: `已被占用（进程：${result.occupiedBy}）` };
   }
   return { valid: true, occupied: false };
