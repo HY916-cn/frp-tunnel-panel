@@ -29,7 +29,7 @@
 由两部分组成，菜单栏 app 通过本机 HTTP API 调用后端服务：
 
 - **`app/`** —— 菜单栏 SwiftUI 应用，负责界面与交互，所有逻辑都调用本机 `server/` 的 HTTP API。
-- **`server/`** —— 本机 Node.js/Express 服务，监听 `127.0.0.1:8000`，负责读写 `frpc.toml`、用 `launchctl` 控制本地 `frpc`、用 SSH 控制远程 `frps`。
+- **`server/`** —— 本机 Node.js/Express 服务，默认监听 `0.0.0.0:8000`，负责读写 `frpc.toml`、用 `launchctl` 控制本地 `frpc`、用 SSH 控制远程 `frps`。
 - **连接状态用真实信号判断**：本地查 TCP 连接，远程查 `systemctl is-active`，不解析日志文字。
 
 其余目录：
@@ -47,6 +47,17 @@
 - 一台公网服务器，SSH 可登录，装好 frp 的 `frps` 并跑成 systemd 服务
 - 本机的 `frpc` 二进制（从 [releases](https://github.com/fatedier/frp/releases) 下载对应平台）
 - 一把单独生成的 SSH 密钥专供此工具连服务器用，不要复用日常登录的密钥
+
+---
+
+## 下载
+
+从 [GitHub Releases](https://github.com/HY916-cn/frp-tunnel-panel/releases) 下载最新版本的两个压缩包：
+
+- `frp-tunnel-panel-*-macos.zip`：macOS 菜单栏应用。
+- `frp-tunnel-panel-*-backend.zip`：本地 Node.js 后端。
+
+菜单栏应用、后端、`frpc` 与两个 launchd 配置需要共同安装；详细步骤见下方「配置」。
 
 ---
 
@@ -133,7 +144,8 @@ osascript -e 'tell application "System Events" to make login item at end with pr
 
 ## 安全
 
-- 后端只监听本机/局域网，`8000` 端口本身不经过 frp 隧道对外暴露。
+- 后端默认绑定 `0.0.0.0:8000` 且没有 API 鉴权；它能够修改隧道配置并控制本地与远程服务，只应在可信网络中使用。
+- 使用 macOS 防火墙或其他网络规则限制 `8000` 端口，不要将它纳入 frp 隧道、公网端口转发或不可信局域网。
 - SSH 仅用于只读探测和固定的 `systemctl` 命令，不拼接用户输入。
 - 建议单独开一把 SSH 密钥给此工具使用；若不放心 root，可换一个权限受限的用户。
 
